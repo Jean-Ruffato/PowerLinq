@@ -1,0 +1,507 @@
+{
+  "uid": "powerlinq-overview",
+  "title": "PowerLinq",
+  "description": "Consultas DAX e pool de conexões. Cada painel responde a uma pergunta declarada no título; nenhum painel usa métrica que a biblioteca não emite.",
+  "tags": [
+    "powerlinq",
+    "dax"
+  ],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "editable": false,
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "name": "workspace",
+        "label": "Workspace",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "powerlinq-prometheus"
+        },
+        "query": "label_values(powerlinq_queries_total, powerlinq_workspace)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "dataset",
+        "label": "Dataset",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "powerlinq-prometheus"
+        },
+        "query": "label_values(powerlinq_queries_total{powerlinq_workspace=~\"$workspace\"}, powerlinq_dataset)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Consultas",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Taxa de erro",
+      "description": "Fração das consultas que falharam. É a primeira pergunta de qualquer incidente.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{powerlinq_dataset}}",
+          "expr": "sum by (powerlinq_dataset) (rate(powerlinq_queries_total{powerlinq_outcome=\"error\", powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])) / clamp_min(sum by (powerlinq_dataset) (rate(powerlinq_queries_total{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])), 0.0001)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Consultas por segundo",
+      "description": "Volume, separado por resultado.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{powerlinq_outcome}}",
+          "expr": "sum by (powerlinq_outcome) (rate(powerlinq_queries_total{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Latência p50 / p95 / p99",
+      "description": "Duração da execução, do aluguel da conexão até o resultado lido.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "p50",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(powerlinq_query_duration_milliseconds_bucket{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])))"
+        },
+        {
+          "refId": "B",
+          "legendFormat": "p95",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(powerlinq_query_duration_milliseconds_bucket{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])))"
+        },
+        {
+          "refId": "C",
+          "legendFormat": "p99",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(powerlinq_query_duration_milliseconds_bucket{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])))"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Por tenant",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "type": "table",
+      "title": "p95 por workspace — um cliente lento não é degradação geral",
+      "description": "É o painel que dá sentido a carregar o destino em toda métrica. Sem esta separação, um modelo lento de um cliente aparece como piora do serviço inteiro.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "instant": true,
+          "expr": "topk(20, histogram_quantile(0.95, sum by (le, powerlinq_workspace, powerlinq_dataset) (rate(powerlinq_query_duration_milliseconds_bucket[15m]))))"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Erros por workspace",
+      "description": "Falha concentrada num destino é problema daquele modelo ou daquele workspace, não do serviço.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "instant": true,
+          "expr": "topk(20, sum by (powerlinq_workspace, powerlinq_dataset) (rate(powerlinq_queries_total{powerlinq_outcome=\"error\"}[15m])))"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Pool de conexões",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Espera pelo pool — p95 (indicador ANTECEDENTE de saturação)",
+      "description": "Com folga fica perto de zero. Quando MaxConnectionsPerModel aperta, esta série cresce ANTES de qualquer erro aparecer. Sem ela, saturação se manifesta só como latência inexplicada.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "p95 {{powerlinq_dataset}}",
+          "expr": "histogram_quantile(0.95, sum by (le, powerlinq_dataset) (rate(powerlinq_pool_wait_milliseconds_bucket{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])))"
+        },
+        {
+          "refId": "B",
+          "legendFormat": "p99 {{powerlinq_dataset}}",
+          "expr": "histogram_quantile(0.99, sum by (le, powerlinq_dataset) (rate(powerlinq_pool_wait_milliseconds_bucket{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Reúso de conexão — verifica a premissa do pool",
+      "description": "reused / (reused + opened). Se o reúso é baixo, o pool não está entregando o que justifica a existência dele: cada consulta está abrindo conexão.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 0.8
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{powerlinq_dataset}}",
+          "expr": "sum by (powerlinq_dataset) (rate(powerlinq_pool_rentals_total{powerlinq_pool_origin=\"reused\", powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])) / clamp_min(sum by (powerlinq_dataset) (rate(powerlinq_pool_rentals_total{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m])), 0.0001)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Conexões vivas e ociosas",
+      "description": "Gauge por processo. Com mais de uma réplica, somar por instância — o atributo de recurso service.instance.id é o que separa as séries.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "vivas — {{service_instance_id}}",
+          "expr": "sum by (service_instance_id) (powerlinq_pool_connections_live)"
+        },
+        {
+          "refId": "B",
+          "legendFormat": "ociosas — {{service_instance_id}}",
+          "expr": "sum by (service_instance_id) (powerlinq_pool_connections_idle)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Repetições por sessão quebrada",
+      "description": "Conexão morta voltando do pool. Um pico aqui costuma anteceder erro visível ao usuário.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cps",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{powerlinq_dataset}}",
+          "expr": "sum by (powerlinq_dataset) (rate(powerlinq_query_retries_total{powerlinq_workspace=~\"$workspace\", powerlinq_dataset=~\"$dataset\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Consultas lentas",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      }
+    },
+    {
+      "type": "table",
+      "title": "Consultas lentas — clique no traceID para ver o DAX",
+      "description": "Busca no Tempo. DOIS defeitos foram corrigidos aqui: o painel era do tipo 'traces', que mostra UM trace e não uma lista, e o select() vinha sem prefixo de escopo — 'powerlinq.dataset' sozinho é erro de sintaxe no TraceQL e a busca voltava 400, o que deixava o painel vazio. Com 'span.powerlinq.dataset' a busca devolve 200. ATENÇÃO: busca TraceQL é executada pelo NAVEGADOR; o backend do Grafana recusa ('backend TraceQL search queries are not supported'), então este painel não pode ser verificado por API nem usado em alerta.",
+      "datasource": {
+        "type": "tempo",
+        "uid": "powerlinq-tempo"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceql",
+          "limit": 50,
+          "tableType": "traces",
+          "query": "{ name = \"powerlinq.query\" } | select(span.powerlinq.workspace, span.powerlinq.dataset, span.powerlinq.duration_ms)"
+        }
+      ],
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Duration",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "row",
+      "title": "Topologia e spans",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      }
+    },
+    {
+      "type": "nodeGraph",
+      "title": "Mapa de serviços — quem chama quem",
+      "description": "Montado pelo metrics_generator do Tempo a partir dos traces. Mostra a aplicação instrumentada chamando o endpoint XMLA, com taxa de erro na aresta. Como a busca TraceQL, o mapa é montado pelo NAVEGADOR a partir das métricas de span no Prometheus — o backend do Grafana recusa o queryType 'serviceMap'.",
+      "datasource": {
+        "type": "tempo",
+        "uid": "powerlinq-tempo"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 10,
+        "x": 0,
+        "y": 47
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "serviceMap"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Spans por segundo, por operação",
+      "description": "Vem das métricas de span do Tempo, não do Meter da biblioteca. Serve de contraprova: se esta série e a de powerlinq.queries divergirem, uma das duas instrumentações está errada.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "powerlinq-prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 14,
+        "x": 10,
+        "y": 47
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{span_name}}",
+          "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total[5m]))"
+        }
+      ]
+    }
+  ]
+}

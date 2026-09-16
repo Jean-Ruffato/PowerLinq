@@ -1,0 +1,16 @@
+# The application pushes over OTLP (--web.enable-otlp-receiver), so there is no scrape job
+# for the application here. The only scrape is Prometheus itself, to know whether it is up.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+# A metric arriving over OTLP keeps the dots and the unit of the original name, which turns
+# `powerlinq.query.duration` into `powerlinq_query_duration_milliseconds`. Translating here,
+# and not in the dashboard, keeps the queries readable.
+otlp:
+  translation_strategy: UnderscoreEscapingWithSuffixes

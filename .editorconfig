@@ -1,0 +1,274 @@
+﻿# ============================================================================
+#  .editorconfig - C# formatting/readability conventions
+#  It encodes the rules that were agreed: Allman braces, 4 spaces, sorted using
+#  (System first), .NET naming conventions, and the style preferences that
+#  favour reading (trivial expression-bodied members, pattern matching, guards).
+#
+#  The mechanical rules (indent, braces, using) are enforced by the formatter
+#  (dotnet format / format-on-save). The style ones come in as "suggestion"
+#  by default - raise them to "warning"/"error" in the build when the team wants
+#  to lock them down. What .editorconfig does NOT decide (extract-to-name, inline
+#  vs fluent past N operators) stays human judgement.
+# ============================================================================
+
+# Marks the root - it stops walking up the directory tree looking for another.
+root = true
+
+# ----------------------------------------------------------------------------
+#  All files - universal rules
+# ----------------------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Markdown: trailing spaces carry meaning (a line break), so do not trim them.
+[*.md]
+trim_trailing_whitespace = false
+
+# Config/data formats conventionally use 2 spaces.
+[*.{json,yml,yaml,xml,csproj,props,targets}]
+indent_size = 2
+
+# ----------------------------------------------------------------------------
+#  C# files
+# ----------------------------------------------------------------------------
+[*.cs]
+indent_size = 4
+max_line_length = 120   # the ceiling that forces a break - not the target
+
+#
+# --- using organization -----------------------------------------------------
+#
+# System.* first, then the rest, sorted alphabetically.
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+# Prefer usings inside the namespace? Left outside (the historical default);
+# switch to inside if the team adopts file-scoped + inner usings.
+csharp_using_directive_placement = outside_namespace:silent
+
+#
+# --- Namespaces ---------------------------------------------------------------
+#
+# File-scoped namespaces remove one level of indentation across the whole file.
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+#
+# --- Braces (Allman) and new lines --------------------------------------------
+#
+# The official .NET convention: the opening brace always on a new line.
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# The middle ground adopted in this project: a guard clause whose condition and
+# body fit on one line stays brace-less (a deliberate, uniform pattern across ~60
+# spots); as soon as the condition or the body spreads over more than one line,
+# the braces come in - that is where the real risk lives (dangling else, a body
+# that grows in silence).
+csharp_prefer_braces = when_multiline:warning
+
+#
+# --- Fine-grained indentation -------------------------------------------------
+#
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+
+#
+# --- Spacing ------------------------------------------------------------------
+#
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+
+#
+# --- Line breaking / wrapping ------------------------------------------------
+#
+# One statement per line and one declaration per line - each line carries one
+# intent, which helps the diff and vertical reading.
+csharp_preserve_single_line_statements = false
+csharp_preserve_single_line_blocks = true
+
+#
+# --- 'var' vs explicit type --------------------------------------------------
+#
+# var when the type is obvious from the right-hand side; explicit when it is not.
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+#
+# --- Expression-bodied members (trivial one-liners) --------------------------
+#
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_operators = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_indexers = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_expression_bodied_lambdas = when_on_single_line:suggestion
+csharp_style_expression_bodied_local_functions = when_on_single_line:suggestion
+
+#
+# --- Pattern matching and switch expressions (they flatten nesting) ----------
+#
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_extended_property_pattern = true:suggestion
+
+#
+# --- Guard clauses / early return and null handling --------------------------
+#
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_prefer_conditional_expression_over_return = true:silent
+
+#
+# --- Trailing commas in multi-line initializers/lists ------------------------
+#
+# Cleaner diffs, and reordering without editing the previous line.
+dotnet_style_prefer_collection_expression = true:suggestion
+
+#
+# --- General .NET readability preferences ------------------------------------
+#
+dotnet_style_qualification_for_field = false:silent
+dotnet_style_qualification_for_property = false:silent
+dotnet_style_qualification_for_method = false:silent
+dotnet_style_qualification_for_event = false:silent
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+dotnet_style_readonly_field = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
+dotnet_style_prefer_compound_assignment = true:suggestion
+
+# ============================================================================
+#  NAMING CONVENTIONS
+#  PascalCase for public types/members, camelCase for locals/params,
+#  _camelCase for private fields, IPascal for interfaces, TPascal for generics.
+# ============================================================================
+
+# --- Symbols ----------------------------------------------------------------
+dotnet_naming_symbols.types.applicable_kinds = class, struct, enum, delegate
+dotnet_naming_symbols.types.applicable_accessibilities = *
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+
+dotnet_naming_symbols.type_parameters.applicable_kinds = type_parameter
+
+dotnet_naming_symbols.public_members.applicable_kinds = property, method, event
+dotnet_naming_symbols.public_members.applicable_accessibilities = public, internal, protected, protected_internal
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_symbols.static_readonly.applicable_kinds = field
+dotnet_naming_symbols.static_readonly.required_modifiers = static, readonly
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, private_protected
+
+dotnet_naming_symbols.locals_params.applicable_kinds = parameter, local
+
+# --- Styles -----------------------------------------------------------------
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+dotnet_naming_style.camel_case.capitalization = camel_case
+
+dotnet_naming_style.i_prefix.capitalization = pascal_case
+dotnet_naming_style.i_prefix.required_prefix = I
+
+dotnet_naming_style.t_prefix.capitalization = pascal_case
+dotnet_naming_style.t_prefix.required_prefix = T
+
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+dotnet_naming_style.underscore_camel.required_prefix = _
+
+# --- Rules (symbol + style + severity) --------------------------------------
+dotnet_naming_rule.interfaces_i_prefix.symbols = interfaces
+dotnet_naming_rule.interfaces_i_prefix.style = i_prefix
+dotnet_naming_rule.interfaces_i_prefix.severity = warning
+
+dotnet_naming_rule.type_parameters_t_prefix.symbols = type_parameters
+dotnet_naming_rule.type_parameters_t_prefix.style = t_prefix
+dotnet_naming_rule.type_parameters_t_prefix.severity = warning
+
+dotnet_naming_rule.types_pascal.symbols = types
+dotnet_naming_rule.types_pascal.style = pascal_case
+dotnet_naming_rule.types_pascal.severity = warning
+
+dotnet_naming_rule.public_members_pascal.symbols = public_members
+dotnet_naming_rule.public_members_pascal.style = pascal_case
+dotnet_naming_rule.public_members_pascal.severity = warning
+
+dotnet_naming_rule.constants_pascal.symbols = constants
+dotnet_naming_rule.constants_pascal.style = pascal_case
+dotnet_naming_rule.constants_pascal.severity = warning
+
+dotnet_naming_rule.static_readonly_pascal.symbols = static_readonly
+dotnet_naming_rule.static_readonly_pascal.style = pascal_case
+dotnet_naming_rule.static_readonly_pascal.severity = suggestion
+
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_rule.private_fields_underscore.severity = warning
+
+dotnet_naming_rule.locals_params_camel.symbols = locals_params
+dotnet_naming_rule.locals_params_camel.style = camel_case
+dotnet_naming_rule.locals_params_camel.severity = suggestion
+
+# ============================================================================
+#  DELIBERATE DEVIATIONS (suppressed with a justification, not left blinking)
+# ============================================================================
+
+# DI registration extensions live by convention in a single namespace of the
+# library, so that AddDaxContext(...) / AddXmlaConnectionPool(...) resolve
+# without requiring an extra using from every consumer. That violates IDE0130
+# (the namespace mirrors the folder) on purpose - the alternative would be three
+# permanent warnings or a worse API.
+[src/PowerLinq.ConnectionPool/DependencyInjection/*.cs]
+dotnet_diagnostic.IDE0130.severity = none
+
+# CS1591 (a public member with no documentation) stays ON, and with -warnaserror in
+# CI that means a new public member with no XML comment fails the build.
+#
+# There was a period when it was suppressed: turning GenerateDocumentationFile on
+# exposed 201 undocumented members, which became 230 as the surface grew. Filling in
+# 230 comments any old way would have been worse than their absence - documentation
+# that does not inform looks like information - so the suppression was a decision
+# recorded with a deadline, met in three stages: the query surface, what has
+# non-obvious semantics, and the syntax model.
+#
+# Do not suppress it again. If a new member does not deserve a sentence that informs,
+# it probably does not deserve to be public.

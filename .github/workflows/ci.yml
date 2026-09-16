@@ -1,0 +1,230 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+# A new push on the same branch cancels the previous run: on a PR only the last
+# commit's result matters, and a Windows runner is billed at double rate.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # bash exists on the Windows runner too, so the shell quoting stays identical
+    # on both systems (--collect:"XPlat Code Coverage").
+    shell: bash
+
+jobs:
+  build-and-test:
+    name: Build e testes (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # A Windows-only failure must not hide the Linux result.
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # The same band as the publishing workflow. It installs the latest 10.0.x,
+          # which satisfies the global.json floor of 10.0.100.
+          dotnet-version: "10.0.x"
+
+      # Leaves in the log which SDK global.json resolved to. If the floor goes back
+      # above what the runner installs, the failure shows up here and not as a
+      # compile error that is hard to attribute.
+      - name: Report resolved SDK
+        run: dotnet --version
+
+      - name: Restore
+        run: dotnet restore PowerLinq.slnx
+
+      # The whole solution, and not only the test project: the Benchmark was never
+      # compiled in CI, so it could break without anyone noticing.
+      #
+      # TreatWarningsAsErrors only here, and not in Directory.Build.props: in a local
+      # build a warning must not block work in progress, but nothing carrying a
+      # warning should reach master.
+      - name: Build
+        run: dotnet build PowerLinq.slnx -c Release --no-restore -warnaserror
+
+      - name: Test
+        run: >
+          dotnet test tests/PowerLinq.Tests/PowerLinq.Tests.csproj
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory artifacts/test-results
+          --collect:"XPlat Code Coverage"
+
+      # The summary steps run even with a failing test — that is exactly when the
+      # failure count matters.
+      - name: Resumo dos testes
+        if: always()
+        shell: pwsh
+        run: |
+          $trx = Get-ChildItem -Path artifacts/test-results -Filter *.trx -Recurse -ErrorAction SilentlyContinue |
+              Select-Object -First 1
+          if (-not $trx) {
+              'Nenhum arquivo .trx encontrado.' | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+              exit 0
+          }
+          [xml]$doc = Get-Content -Path $trx.FullName -Raw
+          $counters = $doc.TestRun.ResultSummary.Counters
+          @(
+              "### Testes — ${{ matrix.os }}"
+              ''
+              '| Resultado | Total | Aprovados | Falhas | Ignorados |'
+              '|---|---:|---:|---:|---:|'
+              ('| {0} | {1} | {2} | {3} | {4} |' -f
+                  $doc.TestRun.ResultSummary.outcome,
+                  $counters.total,
+                  $counters.passed,
+                  $counters.failed,
+                  $counters.notExecuted)
+              ''
+          ) | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+
+      # Coverage per assembly, which is where the gap shows up. Here it is only
+      # measured and published; the threshold that fails the build is applied in
+      # the next step.
+      - name: Resumo da cobertura
+        if: always()
+        shell: pwsh
+        run: |
+          $report = Get-ChildItem -Path artifacts/test-results -Filter coverage.cobertura.xml -Recurse -ErrorAction SilentlyContinue |
+              Select-Object -First 1
+          if (-not $report) {
+              'Nenhum relatório de cobertura encontrado.' | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+              exit 0
+          }
+          [xml]$doc = Get-Content -Path $report.FullName -Raw
+          # Invariant formatting: the runner's culture must not change the report
+          # (under pt-BR the decimal separator would become a comma).
+          $percent = { ([double]$args[0]).ToString('P2', [cultureinfo]::InvariantCulture) }
+          $rows = @(
+              "### Cobertura — ${{ matrix.os }}"
+              ''
+              '| Assembly | Linhas | Branches |'
+              '|---|---:|---:|'
+          )
+          foreach ($package in $doc.coverage.packages.package) {
+              $rows += '| {0} | {1} | {2} |' -f
+                  $package.name,
+                  (& $percent $package.'line-rate'),
+                  (& $percent $package.'branch-rate')
+          }
+          $rows += '| **Total** | **{0}** | **{1}** |' -f
+              (& $percent $doc.coverage.'line-rate'),
+              (& $percent $doc.coverage.'branch-rate')
+          $rows += ''
+          $rows | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+
+      # Coverage floor PER ASSEMBLY, and not over the total. The total hides the gap
+      # that matters: for much of the development it sat around ~55% while
+      # PowerLinq.ConnectionPool was at 0.00% — an aggregate floor of 50% would have
+      # passed. The per-assembly floor fails exactly that case.
+      #
+      # The numbers come from the measured baseline, with slack: the floor is a guard
+      # against a regression of substance (a new subsystem with no test, an assembly
+      # collapsing), not a target to chase. Zero slack would fail a legitimate refactor
+      # and train everyone to ignore the check.
+      #
+      # The ConnectionPool slack is LARGER on purpose, and from measurement: across
+      # three identical runs of the same commit, its coverage was
+      #
+      #   lines     68.03 · 69.00 · 69.00
+      #   branches  66.07 · 71.42 · 71.42     <- swings by 5.35 points
+      #
+      # while the DaxConverter gave 90.96 / 78.50 on all three. The difference is
+      # concurrency: in that assembly there are paths only exercised depending on how
+      # the threads interleave — the semaphore waiting or acquiring straight away, the
+      # TakeIdle hitting, the eviction racing a borrow. A branch of concurrent code is
+      # not deterministic, so a tight floor there fails for a reason unrelated to the
+      # change. The first floor I wrote (67.0) failed on the very first run, exactly
+      # like that.
+      #
+      # Raising the floors is a deliberate act, and shows up as a one-line diff here.
+      - name: Piso de cobertura
+        if: always()
+        shell: pwsh
+        run: |
+          $floors = @{
+              # assembly                  = @(lines, branches)
+              # stable baseline: 90.96 / 78.50
+              'PowerLinq.DaxConverter'    = @(87.0, 74.0)
+              # swinging baseline: 68.03-69.00 / 66.07-71.42 — see the comment above
+              'PowerLinq.ConnectionPool'  = @(64.0, 60.0)
+          }
+
+          $report = Get-ChildItem -Path artifacts/test-results -Filter coverage.cobertura.xml -Recurse -ErrorAction SilentlyContinue |
+              Select-Object -First 1
+          if (-not $report) {
+              # A missing report must not pass as approval: it is the same kind of
+              # silence the floor exists to eliminate.
+              Write-Output '::error::Nenhum relatório de cobertura encontrado — o piso não pôde ser verificado.'
+              exit 1
+          }
+
+          [xml]$doc = Get-Content -Path $report.FullName -Raw
+          $measured = @{}
+          foreach ($package in $doc.coverage.packages.package) {
+              $measured[$package.name] = @(
+                  [double]$package.'line-rate' * 100
+                  [double]$package.'branch-rate' * 100
+              )
+          }
+
+          # The same discipline as the summary above: the runner's culture must not
+          # change the error text. "69.00" and "69,00" in a CI log is noise that
+          # confuses comparison.
+          $fmt = { ([double]$args[0]).ToString('N2', [cultureinfo]::InvariantCulture) }
+
+          $failed = $false
+          foreach ($assembly in $floors.Keys | Sort-Object) {
+              # An assembly that disappears from the report is the most dangerous
+              # failure: it drops out of the calculation instead of showing up as 0%.
+              # Without this check, deleting a project's tests would pass the floor.
+              if (-not $measured.ContainsKey($assembly)) {
+                  Write-Output "::error::$assembly não aparece no relatório de cobertura — sem teste nenhum, ou o projeto saiu da solução."
+                  $failed = $true
+                  continue
+              }
+
+              $lines, $branches = $measured[$assembly]
+              $lineFloor, $branchFloor = $floors[$assembly]
+
+              if ($lines -lt $lineFloor) {
+                  Write-Output "::error::$assembly — linhas $(& $fmt $lines)% abaixo do piso de $(& $fmt $lineFloor)%."
+                  $failed = $true
+              }
+              if ($branches -lt $branchFloor) {
+                  Write-Output "::error::$assembly — branches $(& $fmt $branches)% abaixo do piso de $(& $fmt $branchFloor)%."
+                  $failed = $true
+              }
+          }
+
+          if ($failed) { exit 1 }
+          Write-Output 'Cobertura dentro do piso em todos os assemblies.'
+
+      - name: Upload test and coverage results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: artifacts/test-results/**
+          if-no-files-found: warn

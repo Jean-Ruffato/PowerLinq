@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Framework, nullable e IsPackable=false vêm de Directory.Build.props. -->
+
+  <!-- Versões em Directory.Packages.props (gerenciamento central de pacotes). -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PowerLinq.DaxConverter\PowerLinq.DaxConverter.csproj" />
+    <ProjectReference Include="..\..\src\PowerLinq.ConnectionPool\PowerLinq.ConnectionPool.csproj" />
+  </ItemGroup>
+
+</Project>

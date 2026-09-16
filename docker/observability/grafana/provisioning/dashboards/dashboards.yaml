@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: PowerLinq
+    orgId: 1
+    folder: PowerLinq
+    type: file
+    # Read-only: the dashboard is versioned code, and editing it through the UI would
+    # produce a divergence nobody reviews.
+    allowUiUpdates: false
+    disableDeletion: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

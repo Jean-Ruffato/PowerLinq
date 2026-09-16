@@ -1,0 +1,62 @@
+<Project>
+
+  <!--
+    Imported at the START of every .csproj, so everything here is a default and can
+    be overridden by the project. Items that depend on a value defined in the .csproj
+    (such as IsPackable) live in Directory.Build.targets, imported at the end.
+  -->
+
+  <!-- Common to every project in the solution -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Only the packages under src/ are publishable, and each one re-enables this
+         explicitly. It keeps tests and benchmark from producing a package by accident. -->
+    <IsPackable>false</IsPackable>
+
+    <!--
+      The .NET analyzers in the default set, with the .editorconfig style rules
+      applying at build time (and not only in the IDE).
+
+      AnalysisMode stays at Default on purpose. Measured: in Recommended mode 134
+      diagnostics show up, 93 of them CA1707 over test names with an underscore —
+      the xunit convention, which is not a defect. Of the ~41 remaining, 12 are about
+      culture when reading a result, and were handled separately because they are
+      correctness bugs, not a matter of style. Raising the mode after that is cheap.
+    -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <!--
+    Package metadata. It lives here even though it applies to non-publishable projects
+    (where it is inert), so that a single source of truth exists: the version used to be
+    duplicated across both .csproj files and had to be kept in sync by hand.
+
+    The publishing workflow passes -p:PackageVersion, which overrides Version — that is
+    intentional, so the release version comes from the tag or from the dispatch.
+  -->
+  <PropertyGroup>
+    <Version>0.1.0-preview.1</Version>
+    <Authors>Jean Carlo Moreira Ruffato</Authors>
+    <Copyright>Copyright (c) 2026 Jean Carlo Moreira Ruffato</Copyright>
+
+    <!-- MIT has an SPDX identifier, so the license travels as an expression in the
+         nuspec (see LICENSE). The file is still packed by Directory.Build.targets,
+         but as content, not as PackageLicenseFile — the two properties are mutually
+         exclusive. -->
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <PackageProjectUrl>https://github.com/Jean-Ruffato/PowerLinq</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Jean-Ruffato/PowerLinq</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+</Project>

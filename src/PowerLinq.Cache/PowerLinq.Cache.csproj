@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Sem propriedade própria: framework e nullable vêm de Directory.Build.props.
+       O projeto está vazio (só Class1.cs) e seu destino ainda não foi decidido; até lá,
+       ao menos deixa de divergir do resto da solução, que é net10.0. -->
+
+</Project>

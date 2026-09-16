@@ -1,0 +1,48 @@
+name: Funcionalidade
+description: Um operador, uma tradução ou uma capacidade que falta.
+labels: ["feature"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: O que você precisa fazer
+      description: >
+        Descreva o caso de uso, não a solução. "Preciso filtrar por uma lista de
+        códigos que vem da tela" diz mais do que "adicione suporte a IN".
+    validations:
+      required: true
+
+  - type: textarea
+    id: today
+    attributes:
+      label: Como você resolve isso hoje
+      description: >
+        O contorno atual, se houver — encadear `||` na mão, trazer tudo e filtrar
+        no cliente, escrever DAX cru. O custo do contorno é o melhor argumento
+        para priorizar.
+    validations:
+      required: false
+
+  - type: textarea
+    id: api
+    attributes:
+      label: Como a API poderia parecer
+      description: O C# que você gostaria de escrever, e o DAX que ele deveria gerar.
+      render: csharp
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Tradução de predicado ou projeção
+        - Operador de consulta (filtro, ordenação, agregação, join)
+        - Operador de execução (async, escalar, streaming)
+        - Materialização e mapeamento
+        - Pool de conexões e execução
+        - Observabilidade
+        - Outra
+    validations:
+      required: true

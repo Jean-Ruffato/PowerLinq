@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Framework, nullable e IsPackable=false vêm de Directory.Build.props. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+
+    <!-- BenchmarkDotNet recusa assemblies não otimizados: rode sempre com -c Release -->
+    <Optimize Condition="'$(Configuration)' == 'Release'">true</Optimize>
+
+    <!-- GC workstation não concorrente reduz ruído entre iterações -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
+  <!-- Versão em Directory.Packages.props (gerenciamento central de pacotes). -->
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PowerLinq.DaxConverter\PowerLinq.DaxConverter.csproj" />
+  </ItemGroup>
+
+</Project>

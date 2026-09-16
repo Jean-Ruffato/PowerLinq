@@ -1,0 +1,74 @@
+name: Tradução para DAX incorreta ou ausente
+description: Uma expressão LINQ que não traduz, ou que gera DAX diferente do esperado.
+labels: ["bug", "translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Este é o formulário mais útil do repositório: com o C# de entrada e o DAX
+        gerado, o caso vira teste em minutos. Sem eles, vira adivinhação.
+
+        `ToDaxString()` devolve o DAX **sem executar a consulta**, então nada aqui
+        exige acesso a um endpoint XMLA.
+
+  - type: textarea
+    id: csharp
+    attributes:
+      label: O C# de entrada
+      description: A consulta completa, incluindo a entidade e seus atributos se o mapeamento for relevante.
+      render: csharp
+      placeholder: |
+        [DaxTable("Ordem de Venda")]
+        public sealed class OrdemVenda
+        {
+            public int Qtd { get; set; }
+        }
+
+        var dax = context.Ordens
+            .Where(x => x.Qtd > 0)
+            .ToDaxString();
+    validations:
+      required: true
+
+  - type: textarea
+    id: generated
+    attributes:
+      label: O DAX gerado
+      description: A saída de `ToDaxString()`. Se a tradução lança, cole a exceção completa aqui.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: O DAX esperado
+      description: >
+        O que deveria sair. Se não souber a forma exata, descreva o resultado
+        esperado da consulta — já ajuda a decidir se é bug de tradução ou de
+        semântica.
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Natureza do problema
+      options:
+        - A tradução lança e deveria funcionar
+        - A tradução funciona mas o DAX está errado
+        - O DAX é válido mas o resultado divergiu do LINQ
+        - O servidor recusou o DAX gerado
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: >
+        Versão do pacote ou commit, e — se o servidor recusou o DAX — a mensagem
+        que ele devolveu.
+    validations:
+      required: false

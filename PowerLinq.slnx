@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PowerLinq.Abstractions/PowerLinq.Abstractions.csproj" />
+    <Project Path="src/PowerLinq.Cache/PowerLinq.Cache.csproj" />
+    <Project Path="src/PowerLinq.ConnectionPool/PowerLinq.ConnectionPool.csproj" />
+    <Project Path="src/PowerLinq.DaxConverter/PowerLinq.DaxConverter.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PowerLinq.Benchmark/PowerLinq.Benchmark.csproj" />
+    <Project Path="tests/PowerLinq.Tests/PowerLinq.Tests.csproj" />
+  </Folder>
+</Solution>

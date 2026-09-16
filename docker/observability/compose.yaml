@@ -1,0 +1,84 @@
+# Observability stack for development: it receives and shows the telemetry the library
+# emits, with no manual configuration step.
+#
+# TOPOLOGY, and why this one:
+#
+#   application (on the host) --OTLP--> Prometheus   (metrics, through the OTLP receiver)
+#                     --OTLP--> Tempo       (traces)
+#                                 ^
+#                              Grafana ---- datasources and dashboards provisioned by file
+#
+# There is no OpenTelemetry Collector. In production there usually is — it aggregates,
+# buffers and decouples the application from the backend — but here it would be one more
+# container and one more configuration file to forward what both destinations already
+# accept directly. Fewer pieces, and the application speaks a single protocol.
+#
+# We chose Grafana, and not Kibana, because of the shape of what is emitted: Counter,
+# Histogram and ObservableGauge have Prometheus as their canonical consumer, and the most
+# important panel — pool saturation — is a histogram_quantile. The library's only log
+# content is the DAX and the slow-query line; standing up an Elasticsearch for that would
+# dominate the compose file.
+
+name: powerlinq-observability
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: powerlinq-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      # Receives metrics over OTLP instead of scraping the application. Scraping would
+      # require Prometheus to reach the host, which changes from system to system — and it
+      # would require the Prometheus exporter in the application, which is experimental.
+      - --web.enable-otlp-receiver
+      # native-histograms: without this, the OTLP histogram is converted into classic
+      # buckets and the p95 loses resolution exactly where it matters.
+      #
+      # exemplar-storage: without this Prometheus silently DISCARDS the exemplars, and the
+      # link from a metric point to a trace never shows up — even with the exporter sending
+      # them and the datasource declaring the destination. Measured: 0 exemplars stored
+      # before this flag.
+      - --enable-feature=native-histograms,exemplar-storage
+      # Tempo's metrics_generator writes the span metrics here. Without this flag it would
+      # fail SILENTLY — the panel would come up empty with nothing to show for it.
+      - --web.enable-remote-write-receiver
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  tempo:
+    image: grafana/tempo:2.7.0
+    container_name: powerlinq-tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    ports:
+      # OTLP/gRPC and OTLP/HTTP — the application uses one of the two.
+      - "4317:4317"
+      - "4318:4318"
+      # Tempo's API, published so there is a way to check from the host (/ready, TraceQL).
+      - "3200:3200"
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml:ro
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    container_name: powerlinq-grafana
+    depends_on:
+      - prometheus
+      - tempo
+    ports:
+      - "3000:3000"
+    environment:
+      # Local development stack: no login, so that `docker compose up` is the only step.
+      # Do NOT use this configuration in a shared environment.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      # Opens straight onto the PowerLinq dashboard.
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/powerlinq.json
+    volumes:
+      # Provisioning by file: declarative and versioned. Importing through the API after
+      # the service comes up would be an imperative step — and an imperative step in setup
+      # is what breaks silently.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro

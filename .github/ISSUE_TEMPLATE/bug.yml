@@ -1,0 +1,68 @@
+name: Bug
+description: Comportamento incorreto fora da tradução para DAX.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Se o problema é uma expressão LINQ que não traduz ou gera DAX errado, use
+        o formulário **Tradução para DAX** — ele pede o que aquele caso precisa.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: O que acontece
+      description: O comportamento observado, e o que você esperava em vez dele.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Como reproduzir
+      description: >
+        O código mínimo que reproduz. Se envolver consulta, inclua o C# e a saída
+        de `ToDaxString()` — ele não executa nada, então serve mesmo sem endpoint.
+      render: csharp
+    validations:
+      required: true
+
+  - type: textarea
+    id: exception
+    attributes:
+      label: Exceção
+      description: Mensagem e stack trace completos, se houver.
+      render: text
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Materialização de resultado
+        - Pool de conexões / execução XMLA
+        - Injeção de dependência e configuração
+        - Mensagens e localização
+        - Build, empacotamento ou CI
+        - Não sei
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Versão ou commit
+      placeholder: 0.1.0-preview.1, ou o SHA do commit
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      description: SDK .NET, sistema operacional e, se relevante para o caso, a cultura do processo.
+      placeholder: .NET SDK 10.0.103, Windows 11, pt-BR
+    validations:
+      required: false

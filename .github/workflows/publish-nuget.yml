@@ -1,0 +1,105 @@
+name: Publish NuGet packages
+
+# This workflow publishes to the PUBLIC NuGet.org. The packages are under the MIT
+# license (see LICENSE), so publishing is allowed — but the automatic trigger on a
+# "v*" tag stays removed while the API is in preview, so that a release tag does not
+# publish by accident.
+#
+# The workflow is complete and functional, it only requires a deliberate manual run.
+# To publish by tag again, restore the trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer preview version (for example, 0.1.0-preview.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Build, pack and publish
+    runs-on: ubuntu-latest
+    environment: nuget
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Resolve package version
+        id: version
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TAG_NAME: ${{ github.ref_name }}
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            version="$MANUAL_VERSION"
+          else
+            version="${TAG_NAME#v}"
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*$ ]]; then
+            echo "::error::Version '$version' must be a preview SemVer version, such as 0.1.0-preview.1."
+            exit 1
+          fi
+
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        run: dotnet restore tests/PowerLinq.Tests/PowerLinq.Tests.csproj
+
+      - name: Build
+        run: >
+          dotnet build tests/PowerLinq.Tests/PowerLinq.Tests.csproj
+          --configuration Release
+          --no-restore
+
+      - name: Test
+        run: dotnet test tests/PowerLinq.Tests/PowerLinq.Tests.csproj --configuration Release --no-build
+
+      - name: Pack DaxConverter
+        run: >
+          dotnet pack src/PowerLinq.DaxConverter/PowerLinq.DaxConverter.csproj
+          --configuration Release
+          --no-build
+          --output artifacts/packages
+          -p:PackageVersion=${{ steps.version.outputs.value }}
+
+      - name: Pack ConnectionPool
+        run: >
+          dotnet pack src/PowerLinq.ConnectionPool/PowerLinq.ConnectionPool.csproj
+          --configuration Release
+          --no-build
+          --output artifacts/packages
+          -p:PackageVersion=${{ steps.version.outputs.value }}
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ steps.version.outputs.value }}
+          path: artifacts/packages/*
+
+      - name: Authenticate with NuGet.org
+        id: nuget_login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publish to NuGet.org
+        run: >
+          dotnet nuget push "artifacts/packages/*.nupkg"
+          --api-key "$NUGET_API_KEY"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+        env:
+          NUGET_API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}

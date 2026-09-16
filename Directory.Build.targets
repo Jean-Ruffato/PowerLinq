@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+    Imported at the END of every .csproj, so it already sees the final IsPackable. In
+    Directory.Build.props the condition would evaluate before the publishable project
+    turned the flag on, and no README or LICENSE would make it into the package.
+  -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <!-- A relative Include resolves against the project's directory, so each package
+         carries its own README. -->
+    <None Include="README.md" Pack="true" PackagePath="\" />
+
+    <!-- There is a single LICENSE and it sits at the root; MSBuildThisFileDirectory
+         resolves it regardless of how deep the .csproj is. -->
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

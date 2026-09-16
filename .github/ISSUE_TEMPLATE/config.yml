@@ -1,0 +1,4 @@
+# An issue with no template usually arrives without what is needed to act on it —
+# above all the translation cases, where the input C# and the generated DAX are the
+# working material. The three forms cover what shows up in practice.
+blank_issues_enabled: false

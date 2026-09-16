@@ -1,0 +1,38 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: powerlinq-prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 15s
+      # An exemplar links the metric point to the trace that produced it: it is the path
+      # from "this query took 8 s" to "which DAX it was, and from which tenant".
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: powerlinq-tempo
+
+  - name: Tempo
+    type: tempo
+    uid: powerlinq-tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      # Runs the TraceQL search through Grafana's backend, over streaming. Without this the
+      # plugin refuses the search coming from the server — "backend TraceQL search queries
+      # are not supported" — and the panel comes to depend on running in the browser.
+      streamingEnabled:
+        search: true
+      # Tempo's service map is assembled from the span metrics the metrics_generator writes
+      # into Prometheus. Without this pointer, the generator would stay on with no consumer
+      # — a cost paid and no panel using it.
+      serviceMap:
+        datasourceUid: powerlinq-prometheus
+      # From the trace to the metric: it opens the selected span's latency.
+      tracesToMetrics:
+        datasourceUid: powerlinq-prometheus
+        spanStartTimeShift: -2m
+        spanEndTimeShift: 2m

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Framework, nullable e metadados de pacote vêm de Directory.Build.props;
+       README e LICENSE são empacotados por Directory.Build.targets. -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+
+    <!-- Documentação XML só nos pacotes publicados: é ela que vira IntelliSense de
+         quem instala. Fica aqui, e não em Directory.Build.targets condicionada a
+         IsPackable, porque o SDK deriva DocumentationFile antes de o .targets ser
+         importado — lá a propriedade é aceita e simplesmente não gera arquivo. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <PackageId>PowerLinq.DaxConverter</PackageId>
+    <Description>Provider LINQ que converte expressões C# em consultas DAX.</Description>
+    <PackageTags>linq;dax;power-bi;analysis-services;xmla</PackageTags>
+  </PropertyGroup>
+
+</Project>

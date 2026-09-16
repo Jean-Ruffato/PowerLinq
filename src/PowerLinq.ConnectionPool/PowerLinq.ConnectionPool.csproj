@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Framework, nullable e metadados de pacote vêm de Directory.Build.props;
+       README e LICENSE são empacotados por Directory.Build.targets. -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+
+    <!-- Ver a nota em PowerLinq.DaxConverter.csproj: esta propriedade precisa ser
+         definida antes de o SDK derivar DocumentationFile. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <PackageId>PowerLinq.ConnectionPool</PackageId>
+    <Description>Pool de conexões e executores XMLA para consultas DAX com PowerLinq.</Description>
+    <PackageTags>linq;dax;power-bi;analysis-services;xmla;connection-pool</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PowerLinq.DaxConverter\PowerLinq.DaxConverter.csproj" />
+  </ItemGroup>
+
+  <!-- Versões em Directory.Packages.props (gerenciamento central de pacotes). -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AnalysisServices.AdomdClient.NetCore.retail.amd64" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Azure.Identity" />
+  </ItemGroup>
+
+</Project>

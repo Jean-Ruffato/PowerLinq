@@ -1,0 +1,45 @@
+# Tempo in monolithic mode with local storage: enough for development, and with no
+# dependency on object storage.
+server:
+  http_listen_port: 3200
+
+# TraceQL search over streaming. Without this, Grafana only runs the search in the BROWSER,
+# and the dashboard panel depends on that — besides leaving no way to check the query
+# through the API. With streaming on, Grafana's backend queries Tempo and the panel works
+# the same in a dashboard and in Explore.
+stream_over_http_enabled: true
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal
+
+# Generates span metrics (rate and latency per service) from the traces. Useful for
+# comparing what the span says with what the library's Meter measures — if they diverge,
+# one of the two is instrumented wrong.
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
