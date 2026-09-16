@@ -161,8 +161,12 @@ public sealed class DaxSchemaReaderTests
     {
         var column = new Dictionary<string, object?>
         {
-            ["ID"] = 10L, ["TableID"] = 1L, ["ExplicitName"] = "C",
-            ["InferredName"] = null, ["ExplicitDataType"] = 6, ["Type"] = 1
+            ["ID"] = 10L,
+            ["TableID"] = 1L,
+            ["ExplicitName"] = "C",
+            ["InferredName"] = null,
+            ["ExplicitDataType"] = 6,
+            ["Type"] = 1
         };
 
         // "missing" is the signal not to include the IsHidden column at all.

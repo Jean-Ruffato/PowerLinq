@@ -422,9 +422,9 @@ internal static class DaxStageTranslator
     public static Expression Unwrap(Expression expression)
     {
         while (expression is UnaryExpression
-               {
-                   NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked
-               } unary)
+            {
+                NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked
+            } unary)
         {
             expression = unary.Operand;
         }

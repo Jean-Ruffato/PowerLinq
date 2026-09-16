@@ -247,7 +247,8 @@ public sealed class DaxExpressionVisitor
             return converted;
 
         // An instance call over a text expression: col.ToUpper(), col.StartsWith("x"), ...
-        if (node.Object is null) throw Unsupported(method);
+        if (node.Object is null)
+            throw Unsupported(method);
 
         IDaxExpression target = Visit(node.Object);
         return method.Name switch

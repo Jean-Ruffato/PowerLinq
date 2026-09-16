@@ -237,9 +237,15 @@ public sealed class DaxProjectionStageTests
         {
             switch (@operator)
             {
-                case "SumAsync": projetada.SumAsync(r => r.Preco).GetAwaiter().GetResult(); break;
-                case "GroupBy": projetada.GroupBy(r => r.Nome); break;
-                default: projetada.Aggregate(g => new PorConvencao { Preco = g.Sum(r => r.Preco) }); break;
+                case "SumAsync":
+                    projetada.SumAsync(r => r.Preco).GetAwaiter().GetResult();
+                    break;
+                case "GroupBy":
+                    projetada.GroupBy(r => r.Nome);
+                    break;
+                default:
+                    projetada.Aggregate(g => new PorConvencao { Preco = g.Sum(r => r.Preco) });
+                    break;
             }
         });
 

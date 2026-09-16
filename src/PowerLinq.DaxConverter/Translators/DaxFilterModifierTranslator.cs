@@ -99,11 +99,11 @@ internal static class DaxFilterModifierTranslator
     private static Expression Unwrap(Expression expression)
     {
         while (expression is UnaryExpression
-               {
-                   NodeType: ExpressionType.Convert
+            {
+                NodeType: ExpressionType.Convert
                        or ExpressionType.ConvertChecked
                        or ExpressionType.Quote
-               } unary)
+            } unary)
         {
             expression = unary.Operand;
         }

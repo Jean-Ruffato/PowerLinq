@@ -1,0 +1,5 @@
+# Fim de linha LF em todo o repositório, igual ao .editorconfig
+# (end_of_line = lf). Sem isto, um clone no Windows reintroduz CRLF e o
+# `dotnet format whitespace` passa a acusar cada linha do arquivo como
+# ENDOFLINE — eram ~15.000 avisos em 46 arquivos de teste.
+* text=auto eol=lf

@@ -107,9 +107,12 @@ public class DaxCacheOpportunityBenchmarks
         // does not infer a common type for them.
         switch (index % 3)
         {
-            case 0: return p => p.Categoria == "Eletrônicos";
-            case 1: return p => p.Preco > 100m;
-            default: return p => p.Ativo;
+            case 0:
+                return p => p.Categoria == "Eletrônicos";
+            case 1:
+                return p => p.Preco > 100m;
+            default:
+                return p => p.Ativo;
         }
     }
 
