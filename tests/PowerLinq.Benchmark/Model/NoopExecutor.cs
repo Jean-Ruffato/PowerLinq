@@ -20,9 +20,4 @@ public sealed class NoopExecutor : IDaxQueryExecutor
 
     public Task<int> ExecuteCountAsync(string daxQuery, CancellationToken cancellationToken = default)
         => Task.FromResult(1);
-
-    private static class SingleRow<T> where T : class
-    {
-        public static readonly List<T> Value = [Activator.CreateInstance<T>()];
-    }
 }

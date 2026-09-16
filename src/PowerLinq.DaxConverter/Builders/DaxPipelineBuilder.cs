@@ -297,21 +297,6 @@ public static class DaxPipelineBuilder
     /// Folds the stages into a table expression, also returning the ordering terms no window
     /// consumed.
     /// </summary>
-    /// <summary>What the fold produces. A record, not a tuple: there are six things.</summary>
-    /// <param name="Source">The table expression that was built.</param>
-    /// <param name="Pending">The ordering terms no window consumed.</param>
-    /// <param name="Definitions">The declarations of the <c>DEFINE</c> block.</param>
-    /// <param name="BeforeWindow">The source as it stood before the first window, or null.</param>
-    /// <param name="FilterTables">The filters in filter-context argument form.</param>
-    /// <param name="Reshaped">Whether some stage changed the result's shape.</param>
-    private sealed record Folded(
-        IDaxTableExpression Source,
-        List<DaxOrderTerm> Pending,
-        List<DaxVarDefinition> Definitions,
-        IDaxTableExpression? BeforeWindow,
-        List<IDaxTableExpression> FilterTables,
-        bool Reshaped);
-
     private static Folded Fold(
         DaxPipeline pipeline,
         IPowerLinqLocalizer? localizer,
@@ -529,7 +514,7 @@ public static class DaxPipelineBuilder
 
         for (int i = 0; i < pending.Count; i++)
         {
-            DaxOrderExpressionRewriter.Result rewrite = DaxOrderExpressionRewriter.Rewrite(
+            Result rewrite = DaxOrderExpressionRewriter.Rewrite(
                 pending[i].Expression,
                 reference => renames.GetValueOrDefault(reference));
 
@@ -603,7 +588,7 @@ public static class DaxPipelineBuilder
         if (available is null)
             return;
 
-        DaxOrderExpressionRewriter.Result rewrite = DaxOrderExpressionRewriter.Rewrite(
+        Result rewrite = DaxOrderExpressionRewriter.Rewrite(
             term.Expression,
             reference => available.Contains(reference, StringComparer.Ordinal) ? reference : null);
 
