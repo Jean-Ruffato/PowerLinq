@@ -247,7 +247,8 @@ public sealed class DaxExpressionVisitor
             return converted;
 
         // An instance call over a text expression: col.ToUpper(), col.StartsWith("x"), ...
-        if (node.Object is null) throw Unsupported(method);
+        if (node.Object is null)
+            throw Unsupported(method);
 
         IDaxExpression target = Visit(node.Object);
         return method.Name switch
@@ -791,25 +792,6 @@ public sealed class DaxExpressionVisitor
     /// </remarks>
     private static bool DependsOnParameter(Expression expression) =>
         ParameterDetector.Detect(expression);
-
-    private sealed class ParameterDetector : ExpressionVisitor
-    {
-        private bool _found;
-
-        public static bool Detect(Expression expression)
-        {
-            var detector = new ParameterDetector();
-            detector.Visit(expression);
-
-            return detector._found;
-        }
-
-        protected override Expression VisitParameter(ParameterExpression node)
-        {
-            _found = true;
-            return node;
-        }
-    }
 
     /// <summary>Describes the member path as <c>Produto.Nome.Length</c>, for the message.</summary>
     private static string DescribeMemberPath(MemberExpression node)

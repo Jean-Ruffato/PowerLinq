@@ -10,9 +10,9 @@ arquivo registra o que não cabe nesses lugares.
 **Cada arquivo `.cs` declara no máximo um tipo.** "Tipo" aqui é qualquer
 `class`, `record`, `struct`, `interface`, `enum` ou `delegate`.
 
-- **Vale para tipos aninhados também.** Um fixture, fake ou DTO que hoje vive
-  `private` dentro de outra classe sai para o próprio arquivo. O mecanismo para
-  o código de teste está abaixo.
+- **Vale para tipos aninhados também.** Um fake ou DTO que hoje vive `private`
+  dentro de outra classe sai para o próprio arquivo. A exceção é a fixture de
+  uso único do código de teste, pelo motivo registrado abaixo.
 - **O nome do arquivo é o nome do tipo.** `DaxParameter<T>` → `DaxParameter.cs`
   (a aridade genérica não entra no nome).
 - **Interface e implementação nunca dividem arquivo.** `IXmlaConnection.cs` e
@@ -39,25 +39,32 @@ arquivo registra o que não cabe nesses lugares.
   arquivo" é a peça que faltava para o layout do disco espelhar o modelo de
   tipos.
 
-### Código de teste: fixtures de-aninhados
+### Código de teste: fixture de uso único continua aninhada
 
-A classe de teste (`DaxSelectTests`) fica sozinha no seu arquivo. Cada helper
-dela — `Produto`, `RecordingExecutor`, `NoopExecutor`, … — sai para um arquivo
-irmão, **na mesma pasta e no mesmo namespace**, nomeado
-`<ClasseDeTeste>.<Helper>.cs` (ex.: `DaxSelectTests.Produto.cs`). A pasta não
-vira subpasta por classe de teste — isso mudaria o namespace e acionaria
-`IDE0130`.
+"Um tipo por arquivo" para em `src/` e nos helpers compartilhados entre arquivos
+de teste. **A fixture de uso único — a `Produto`, a `Venda`, o `NoopExecutor` que
+só uma classe de teste usa — continua `private` dentro da classe de teste.**
 
-O helper de-aninhado leva o modificador **`file`** (`file sealed class Produto`),
-não `private` nem `internal`:
+A regra anterior mandava de-aninhar cada helper para um arquivo irmão
+(`DaxSelectTests.Produto.cs`), no mesmo namespace, com o modificador **`file`**.
+Isso não compila, e o motivo é o próprio `file`: ele escopa o tipo ao **arquivo
+em que é declarado**, não à classe de teste. A fixture em um arquivo irmão fica
+invisível para a classe que a usa — `DaxSelectTests.cs` deixa de enxergar
+`Produto`, e o build para em `CS0246` em cada uso.
 
-- `file` reproduz exatamente a visibilidade que `private` aninhado dava: o tipo
-  só existe dentro daquele arquivo.
-- Sem `file`, os helpers colidiriam. Há ~20 `Produto`, ~21 `NoopExecutor` e
-  ~16 `Venda` no projeto de teste — cada um com uma forma diferente, um por
-  arquivo de teste.
-- Zero mudança de semântica: as regras de naming do `.editorconfig` e a
-  descoberta do xUnit continuam enxergando o mesmo que antes.
+As quatro coisas que a regra pedia ao mesmo tempo — um tipo por arquivo, arquivo
+irmão, mesmo namespace, e `file` preservando o nome curto — não são satisfazíveis
+juntas em C#. Manter a fixture aninhada é a saída que menos custa. As outras duas
+eram renomear ~237 tipos para nomes únicos (`DaxSelectTestsProduto`, repetido em
+cada uso dentro do teste) ou dar um namespace por classe de teste; nenhuma paga o
+que cobra para uma fixture de cinco linhas usada em um lugar só.
 
-Um helper genuinamente compartilhado entre arquivos de teste vira `internal` de
-verdade, um por arquivo, com nome único.
+E o que a regra ganha — blame, merge e descoberta por tipo — vale para o tipo que
+várias coisas referenciam. Uma fixture de uso único não é isso: ela é lida junto
+com o teste, e é ali que ela ajuda.
+
+Um helper genuinamente compartilhado entre arquivos de teste é outro caso, e esse
+**sai**: vira `internal` de verdade, um por arquivo, com nome único. Foi o que
+aconteceu com `Fakes.cs`, que virou `ControllableTimeProvider.cs`, `FakeTimer.cs`,
+`FakeXmlaConnection.cs`, `FakeXmlaConnectionFactory.cs`,
+`ThrowingXmlaConnectionFactory.cs` e `BrokenSession.cs`.

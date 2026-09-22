@@ -40,9 +40,6 @@ public sealed class DaxGroupedQuery<T, TKey> where T : class
         _rollupLevels = rollupLevels ?? [];
     }
 
-    /// <summary>A rollup level not yet translated: the key expression and the flag's name.</summary>
-    internal sealed record RollupLevelRequest(Expression Keys, string FlagName);
-
     /// <summary>
     /// Asks for the <b>subtotal row</b> alongside the detail rows, in the same query, covering the
     /// whole key in a single level.

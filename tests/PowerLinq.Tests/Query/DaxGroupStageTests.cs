@@ -276,7 +276,9 @@ public sealed class DaxGroupStageTests
         {
             switch (@operator)
             {
-                default: agrupada.SumAsync(r => r.Total).GetAwaiter().GetResult(); break;
+                default:
+                    agrupada.SumAsync(r => r.Total).GetAwaiter().GetResult();
+                    break;
             }
         });
 

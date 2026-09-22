@@ -124,6 +124,4 @@ public sealed class XmlaAccessTokenProvider : IXmlaAccessTokenProvider
             && entry.ExpiresOn - _timeProvider.GetUtcNow()
                 > TimeSpan.FromSeconds(_options.TokenRefreshMarginSeconds);
     }
-
-    private sealed record CachedToken(AdomdAccessToken Token, DateTimeOffset ExpiresOn);
 }
