@@ -11,7 +11,7 @@
   <!-- PowerLinq.ConnectionPool -->
   <ItemGroup>
     <PackageVersion Include="Azure.Identity" Version="1.19.0" />
-    <PackageVersion Include="Microsoft.AnalysisServices.AdomdClient.NetCore.retail.amd64" Version="19.84.1" />
+    <PackageVersion Include="Microsoft.AnalysisServices.AdomdClient" Version="19.117.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(MicrosoftExtensionsVersion)" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(MicrosoftExtensionsVersion)" />
