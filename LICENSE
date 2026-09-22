@@ -27,7 +27,6 @@ This software depends on third-party packages distributed under their own
 licenses, which are not affected by this notice and continue to govern the
 respective components:
 
-  - Microsoft.AnalysisServices.AdomdClient.NetCore.retail.amd64 — proprietary,
-    Microsoft Corporation
+  - Microsoft.AnalysisServices.AdomdClient — proprietary, Microsoft Corporation
   - Azure.Identity — MIT
   - Microsoft.Extensions.* — MIT

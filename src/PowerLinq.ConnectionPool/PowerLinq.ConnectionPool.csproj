@@ -20,7 +20,7 @@
 
   <!-- Versões em Directory.Packages.props (gerenciamento central de pacotes). -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.AnalysisServices.AdomdClient.NetCore.retail.amd64" />
+    <PackageReference Include="Microsoft.AnalysisServices.AdomdClient" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
